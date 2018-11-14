@@ -81,6 +81,11 @@ let main target before before_file after after_file files =
     | _ :: _ :: _ :: _, _ ->
         failwith "There should be at most one '%' sign in target filename"
     | _, [] -> extract_doc_channel ~filename:"stdin" snippets stdin stdout
+    | ["-"], _ ->
+        files |> List.iter @@ fun filename ->
+          let in_channel = open_in filename in
+          try_close ~close:(fun () -> close_in in_channel) @@ fun () ->
+            extract_doc_channel ~filename snippets in_channel stdout
     | [target], [source] -> extract_doc_file snippets ~source ~target
     | [_target], _ ->
         failwith
