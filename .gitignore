@@ -4,4 +4,5 @@
 *.cmti
 *~
 .merlin
+*.install
 /_build
