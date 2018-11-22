@@ -6,8 +6,8 @@ homepage: "https://gitlab.inria.fr/tmartine/ocamlcodoc"
 bug-reports: "https://gitlab.inria.fr/tmartine/ocamlcodoc/issues"
 license: "BSD"
 dev-repo: "https://gitlab.inria.fr/tmartine/ocamlcodoc.git"
-build: [dune build "@install"]
-install: [dune install]
-remove: [dune uninstall]
+build: [["dune" "build" "@install"]
+install: [["dune" "install"]]
+remove: [["dune" "uninstall"]]
 depends: ["stdcompat"]
 available: [ocaml-version >= "3.07" & ocaml-version < "4.08.0"]
