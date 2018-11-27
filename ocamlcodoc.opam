@@ -6,7 +6,7 @@ homepage: "https://gitlab.inria.fr/tmartine/ocamlcodoc"
 bug-reports: "https://gitlab.inria.fr/tmartine/ocamlcodoc/issues"
 license: "BSD"
 dev-repo: "https://gitlab.inria.fr/tmartine/ocamlcodoc.git"
-build: [["dune" "build" "@install"]
+build: [["dune" "build" "@install"]]
 install: [["dune" "install"]]
 remove: [["dune" "uninstall"]]
 depends: ["stdcompat"]
