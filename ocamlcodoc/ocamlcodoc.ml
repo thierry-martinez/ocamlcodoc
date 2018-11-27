@@ -1,17 +1,3 @@
-let try_close f ~close =
-  match f () with
-  | result ->
-      close ();
-      result
-  | exception e ->
-      begin
-        try
-          close ()
-        with _ ->
-          ()
-      end;
-      e |> raise
-
 let set_filename lexbuf filename =
   lexbuf.Lexing.lex_curr_p <-
     { lexbuf.Lexing.lex_curr_p with Lexing.pos_fname = filename }
@@ -36,8 +22,12 @@ let output_snippet out_channel snippet =
   | File filename ->
       Utils.output_line_number out_channel filename 1;
       let in_channel = open_in filename in
-      try_close ~close:(fun () -> close_in in_channel) @@ fun () ->
+      protect begin fun () ->
         output_channel_to_the_end out_channel in_channel
+      end
+      ~finally:begin fun () ->
+        close_in in_channel
+      end
 
 type snippets = {
     before : snippet option;
@@ -57,10 +47,18 @@ let extract_doc_channel ~filename snippets in_channel
 
 let extract_doc_file snippet ~source ~target =
   let in_channel = open_in source in
-  try_close ~close:(fun () -> close_in in_channel) @@ fun () ->
+  protect begin fun () ->
     let out_channel = open_out target in
-    try_close ~close:(fun () -> close_out out_channel) @@ fun () ->
+    protect begin fun () ->
       extract_doc_channel ~filename:source snippet in_channel out_channel
+    end
+    ~finally:begin fun () ->
+      close_out out_channel
+    end
+  end
+  ~finally:begin fun () ->
+    close_in in_channel
+  end
 
 let make_snippet ~contents ~file ~error =
   match contents, file with
@@ -84,8 +82,12 @@ let main target before before_file after after_file files =
     | ["-"], _ ->
         files |> List.iter @@ fun filename ->
           let in_channel = open_in filename in
-          try_close ~close:(fun () -> close_in in_channel) @@ fun () ->
+          protect begin fun () ->
             extract_doc_channel ~filename snippets in_channel stdout
+          end
+          ~finally:begin fun () ->
+            close_in in_channel
+          end
     | [target], [source] -> extract_doc_file snippets ~source ~target
     | [_target], _ ->
         failwith
