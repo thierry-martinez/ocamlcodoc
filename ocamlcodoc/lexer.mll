@@ -1,179 +1,315 @@
 {
-  exception Syntax_error of Lexing.position * string
+  type range = {
+      start_pos : Lexing.position;
+      end_pos : Lexing.position;
+    }
+
+  exception Syntax_error of range * string
+
+  type delimiter_kind = Open_codoc | Comment | String | String_ident of string | Square_bracket
+
+  type open_delimiter = {
+      position : Lexing.position;
+      kind : delimiter_kind;
+      mutable warned : bool;
+    }
+
+  type 'a context = {
+      out_channel : 'a;
+      delimiter_stack : open_delimiter Stack.t;
+      warnings : (range * string) Queue.t;
+      mutable important_warnings : bool;
+    }
+
+  let is_in_string context =
+    match Stack.top context.delimiter_stack with
+    | { kind = (String | String_ident _) } ->
+        true
+    | _ ->
+        false
+
+  let try_close_delimiter context delimiter_kind =
+    try
+      context.delimiter_stack |> Stack.iter @@ fun { kind } ->
+        if kind = delimiter_kind then
+          raise Exit
+    with Exit ->
+      while (Stack.pop context.delimiter_stack).kind <> delimiter_kind do () done
+
+  let mismatched_delimiters context delimiter end_pos =
+    if not delimiter.warned then
+      begin
+        delimiter.warned <- true;
+        context.important_warnings <- true;
+        let range = { start_pos = delimiter.position; end_pos } in
+        Queue.push (range, "Mismatched delimiters") context.warnings;
+      end
 }
 
 let ident = ['a' - 'z' '_'] ['A' - 'Z' 'a' - 'z' '0' - '9' '_']*
 
-rule main out_channel = parse
+rule main context = parse
 | "(**" {
-  doc_comment lexbuf.lex_curr_p out_channel lexbuf
+  doc_comment lexbuf.lex_curr_p context lexbuf
 }
-| "(*" {
-  code_comment lexbuf.lex_curr_p None lexbuf;
-  main out_channel lexbuf
+| "(*" | "(***" {
+  code_comment lexbuf.lex_curr_p { context with out_channel = None } lexbuf;
+  main context lexbuf
 }
 | "\"" {
-  string lexbuf.lex_curr_p None lexbuf;
-  main out_channel lexbuf;
+  string lexbuf.lex_curr_p { context with out_channel = None } lexbuf;
+  main context lexbuf;
 }
 | "{" (ident as delim) "|" {
-  ident_string lexbuf.lex_curr_p None delim lexbuf;
-  main out_channel lexbuf
+  ident_string lexbuf.lex_curr_p { context with out_channel = None } delim lexbuf;
+  main context lexbuf
 }
 | "\n" {
   Lexing.new_line lexbuf;
-  main out_channel lexbuf
+  main context lexbuf
 }
 | eof {
-  false
+  ()
 }
 | _ {
-  main out_channel lexbuf
+  main context lexbuf
 }
-and doc_comment start_pos out_channel = parse
+and doc_comment start_pos context = parse
 | "*)" {
-  main out_channel lexbuf
+  main context lexbuf
 }
 | "{[" {
-  let start_pos = lexbuf.lex_curr_p in
-  Utils.output_position out_channel start_pos;
-  codoc start_pos out_channel lexbuf
+  let position = lexbuf.lex_start_p in
+  Utils.output_position context.out_channel position;
+  Stack.push { position; kind = Open_codoc; warned = false }
+    context.delimiter_stack;
+  codoc start_pos context lexbuf
 }
 | "(*" {
-  code_comment lexbuf.lex_curr_p None lexbuf;
-  doc_comment start_pos out_channel lexbuf
+  code_comment lexbuf.lex_curr_p { context with out_channel = None } lexbuf;
+  doc_comment start_pos context lexbuf
 }
 | "\"" {
-  string lexbuf.lex_curr_p None lexbuf;
-  doc_comment start_pos out_channel lexbuf
+  string lexbuf.lex_curr_p { context with out_channel = None } lexbuf;
+  doc_comment start_pos context lexbuf
 }
 | "{" (ident as delim) "|" {
-  ident_string lexbuf.lex_curr_p None delim lexbuf;
-  main out_channel lexbuf
+  ident_string lexbuf.lex_curr_p { context with out_channel = None } delim lexbuf;
+  main context lexbuf
 }
 | "\n" {
   Lexing.new_line lexbuf;
-  doc_comment start_pos out_channel lexbuf
+  doc_comment start_pos context lexbuf
 }
 | eof {
-  raise (Syntax_error (start_pos, "Unterminated doc-comment"))
+  let range = { start_pos; end_pos = lexbuf.lex_curr_p} in
+  raise (Syntax_error (range, "Unterminated doc-comment"))
 }
 | _ {
-  doc_comment start_pos out_channel lexbuf
+  doc_comment start_pos context lexbuf
 }
-and codoc start_pos out_channel = parse
+and codoc start_pos context = parse
 | "]}" {
-  true
+  begin
+    match Stack.top context.delimiter_stack with
+    | { kind = Open_codoc } ->
+        ignore (Stack.pop context.delimiter_stack);
+    | { warned = false } as delimiter ->
+        delimiter.warned <- true;
+        let range = {
+          start_pos = delimiter.position;
+          end_pos = lexbuf.lex_curr_p } in
+        let warning =
+          (range, "End of pre-formatted code before closing delimiter") in
+        Queue.push warning context.warnings
+    | { warned = true } -> ()
+  end;
+  doc_comment start_pos context lexbuf
 }
 | "\n" {
   Lexing.new_line lexbuf;
-  output_char out_channel '\n';
-  codoc start_pos out_channel lexbuf
+  output_char context.out_channel '\n';
+  codoc start_pos context lexbuf
 }
 | "(*" {
-  output_string out_channel "(*";
-  code_comment lexbuf.lex_curr_p (Some out_channel) lexbuf;
-  codoc start_pos out_channel lexbuf
+  if not (is_in_string context) then
+    Stack.push
+      { position = lexbuf.lex_start_p; kind = Comment; warned = false }
+      context.delimiter_stack;
+  output_string context.out_channel "(*";
+  codoc start_pos context lexbuf
 }
 | "\"" {
-  output_string out_channel "\"";
-  string lexbuf.lex_curr_p (Some out_channel) lexbuf;
-  codoc start_pos out_channel lexbuf
+  begin 
+    match
+      try
+        Some (Stack.top context.delimiter_stack)
+      with Stack.Empty ->
+        None
+    with
+    | Some { kind = String_ident _ } ->
+        ()
+    | Some { kind = String } ->
+        ignore (Stack.pop context.delimiter_stack)
+    | _ ->
+        Stack.push
+          { position = lexbuf.lex_start_p; kind = String; warned = false }
+          context.delimiter_stack
+  end;
+  output_string context.out_channel "\"";
+  codoc start_pos context lexbuf
 }
 | ("{" (ident as delim) "|") as start_string {
-  output_string out_channel start_string;
-  ident_string lexbuf.lex_curr_p (Some out_channel) delim lexbuf;
-  codoc start_pos out_channel lexbuf
+  if not (is_in_string context) then
+    Stack.push
+      { position = lexbuf.lex_start_p; kind = String_ident delim;
+        warned = false } context.delimiter_stack;
+  output_string context.out_channel start_string;
+  codoc start_pos context lexbuf
+}
+| "[" {
+  if not (is_in_string context) then
+    Stack.push
+      { position = lexbuf.lex_start_p; kind = Square_bracket; warned = false }
+      context.delimiter_stack;
+  output_string context.out_channel "[";
+  codoc start_pos context lexbuf
 }
 | "*)" {
-  raise (Syntax_error (lexbuf.lex_curr_p, "Unterminated code in doc-comment"))
+  begin
+    match Stack.top context.delimiter_stack with
+    | { kind = (String | String_ident _) } ->
+        ()
+    | { kind = Comment } ->
+        ignore (Stack.pop context.delimiter_stack)
+    | delimiter ->
+        try_close_delimiter context Comment;
+        if not delimiter.warned then
+          begin
+            delimiter.warned <- true;
+            mismatched_delimiters context delimiter lexbuf.lex_curr_p
+          end
+  end;
+  output_string context.out_channel "*)";
+  codoc start_pos context lexbuf
+}
+| ("|" (ident as delim) "}") as end_string {
+  begin
+    match Stack.top context.delimiter_stack with
+    | { kind = String_ident delim' } when delim = delim' ->
+        ignore (Stack.pop context.delimiter_stack)
+    | { kind = (String | String_ident _) } ->
+        ()
+    | delimiter ->
+        mismatched_delimiters context delimiter lexbuf.lex_curr_p
+  end;
+  output_string context.out_channel end_string;
+  codoc start_pos context lexbuf
+}
+| "]" {
+  begin
+    match Stack.top context.delimiter_stack with
+    | { kind = (String | String_ident _) } ->
+        ()
+    | { kind = Square_bracket } ->
+        ignore (Stack.pop context.delimiter_stack)
+    | delimiter ->
+        try_close_delimiter context Square_bracket;
+        mismatched_delimiters context delimiter lexbuf.lex_curr_p
+  end;
+  output_string context.out_channel "]";
+  codoc start_pos context lexbuf
 }
 | eof {
-  raise (Syntax_error (start_pos, "Unterminated code in doc-comment"))
+  let range = { start_pos; end_pos = lexbuf.lex_curr_p} in
+  raise (Syntax_error (range, "Unterminated code in doc-comment"))
 }
 | _ as char {
-  output_char out_channel char;
-  codoc start_pos out_channel lexbuf
+  output_char context.out_channel char;
+  codoc start_pos context lexbuf
 }
-and code_comment start_pos out_channel = parse
+and code_comment start_pos context = parse
 | "(*" {
   Utils.option_iter (fun out_channel -> output_string out_channel "(*")
-      out_channel;
-  code_comment start_pos out_channel lexbuf;
-  code_comment start_pos out_channel lexbuf
+      context.out_channel;
+  code_comment start_pos context lexbuf;
+  code_comment start_pos context lexbuf
 }
 | "*)" {
   Utils.option_iter (fun out_channel -> output_string out_channel "*)")
-      out_channel;
+    context.out_channel;
   ()
 }
 | "\"" {
   Utils.option_iter (fun out_channel -> output_string out_channel "\"")
-      out_channel;
-  ignore (string lexbuf.lex_curr_p out_channel lexbuf);
-  code_comment start_pos out_channel lexbuf
+    context.out_channel;
+  ignore (string lexbuf.lex_curr_p context lexbuf);
+  code_comment start_pos context lexbuf
 }
 | "\n" {
   Utils.option_iter (fun out_channel -> output_string out_channel "\n")
-      out_channel;
+    context.out_channel;
   Lexing.new_line lexbuf;
-  code_comment start_pos out_channel lexbuf
+  code_comment start_pos context lexbuf
 }
 | eof {
-  raise (Syntax_error (start_pos, "Unterminated code comment"))
+  let range = { start_pos; end_pos = lexbuf.lex_curr_p} in
+  raise (Syntax_error (range, "Unterminated code comment"))
 }
 | _ {
-  code_comment start_pos out_channel lexbuf
+  code_comment start_pos context lexbuf
 }
-and string start_pos out_channel = parse
+and string start_pos context = parse
 | "\"" {
   Utils.option_iter (fun out_channel -> output_string out_channel "\"")
-      out_channel;
+    context.out_channel;
 }
 | ("\\" _) as s {
   Utils.option_iter (fun out_channel -> output_string out_channel s)
-      out_channel;
-  string start_pos out_channel lexbuf
+     context.out_channel;
+  string start_pos context lexbuf
 }
 | "\n" {
   Utils.option_iter (fun out_channel -> output_string out_channel "\n")
-      out_channel;
+    context.out_channel;
   Lexing.new_line lexbuf;
-  string start_pos out_channel lexbuf
+  string start_pos context lexbuf
 }
 | eof {
-  raise (Syntax_error (start_pos, "Unterminated string"))
+  let range = { start_pos; end_pos = lexbuf.lex_curr_p} in
+  raise (Syntax_error (range, "Unterminated string"))
 }
 | _ as char {
-  Utils.option_iter (fun out_channel -> output_char out_channel char)
-      out_channel;
-  string start_pos out_channel lexbuf
+  Utils.option_iter (fun context -> output_char context char)
+      context.out_channel;
+  string start_pos context lexbuf
 }
-and ident_string start_pos out_channel delim = parse
+and ident_string start_pos context delim = parse
 | ("|" (ident as delim') "}") as end_string {
   Utils.option_iter (fun out_channel -> output_string out_channel end_string)
-      out_channel;
+      context.out_channel;
   if delim = delim' then
     ()
   else
-    ident_string start_pos out_channel delim lexbuf
+    ident_string start_pos context delim lexbuf
 }
 | ("\\" _) as s {
   Utils.option_iter (fun out_channel -> output_string out_channel s)
-      out_channel;
-  ident_string start_pos out_channel delim lexbuf
+      context.out_channel;
+  ident_string start_pos context delim lexbuf
 }
 | "\n" {
   Lexing.new_line lexbuf;
   Utils.option_iter (fun out_channel -> output_string out_channel "\n")
-      out_channel;
-  ident_string start_pos out_channel delim lexbuf
+    context.out_channel;
+  ident_string start_pos context delim lexbuf
 }
 | eof {
-  raise (Syntax_error (start_pos, "Unterminated string"))
+  let range = { start_pos; end_pos = lexbuf.lex_curr_p} in
+  raise (Syntax_error (range, "Unterminated string"))
 }
 | _ as char {
   Utils.option_iter (fun out_channel -> output_char out_channel char)
-      out_channel;
-  ident_string start_pos out_channel delim lexbuf
+    context.out_channel;
+  ident_string start_pos context delim lexbuf
 }

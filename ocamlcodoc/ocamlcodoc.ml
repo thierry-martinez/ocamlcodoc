@@ -34,16 +34,38 @@ type snippets = {
     after : snippet option;
   }
 
+let pos_column { Lexing.pos_cnum; pos_bol } =
+  pos_cnum - pos_bol
+
+let output_range out_channel { Lexer.start_pos; end_pos } =
+  assert (start_pos.pos_fname = end_pos.pos_fname);
+  if start_pos.pos_lnum = end_pos.pos_lnum then
+    Printf.fprintf stderr "%s:%d:%d-%d" start_pos.pos_fname
+      start_pos.pos_lnum (pos_column start_pos) (pos_column end_pos)
+  else
+    Printf.fprintf stderr "%s:%d:%d-%d:%d" start_pos.pos_fname
+      start_pos.pos_lnum (pos_column start_pos)
+      end_pos.pos_lnum (pos_column end_pos)
+
 let extract_doc_channel ~filename snippets in_channel
     out_channel =
   let lexbuf = Lexing.from_channel in_channel in
   set_filename lexbuf filename;
-  let rec loop lexer_result =
-    if lexer_result then
-      loop (Lexer.doc_comment lexbuf.lex_curr_p out_channel lexbuf) in
+  let context = {
+    Lexer.out_channel;
+    delimiter_stack = Stack.create ();
+    warnings = Queue.create ();
+    important_warnings = false
+  } in
   Utils.option_iter (output_snippet out_channel) snippets.before;
-  loop (Lexer.main out_channel lexbuf);
-  Utils.option_iter (output_snippet out_channel) snippets.after
+  Lexer.main context lexbuf;
+  Utils.option_iter (output_snippet out_channel) snippets.after;
+  if not (Stack.is_empty context.delimiter_stack) then
+    Lexer.mismatched_delimiters context
+      (Stack.top context.delimiter_stack)
+      lexbuf.lex_curr_p;
+  context.warnings |> Queue.iter @@ fun (range, message) ->
+    Printf.fprintf stderr "%a:\nwarning: %s\n\n" output_range range message
 
 let extract_doc_file snippet ~source ~target =
   let in_channel = open_in source in
@@ -103,9 +125,8 @@ let main target before before_file after after_file files =
   | Failure msg ->
       prerr_endline msg;
       exit 1
-  | Lexer.Syntax_error ({Lexing.pos_fname; pos_lnum; pos_cnum; pos_bol}, msg) ->
-      let column = pos_cnum - pos_bol in
-      Printf.fprintf stderr "%s:%d:%d: %s\n" pos_fname pos_lnum column msg;
+  | Lexer.Syntax_error (range, msg) ->
+      Printf.fprintf stderr "%a: %s\n" output_range range msg;
       exit 1
 
 let files =
