@@ -1,8 +1,3 @@
-let option_iter f o =
-  match o with
-  | None -> ()
-  | Some x -> f x
-
 let output_line_number out_channel fname lnum =
   Printf.fprintf out_channel "\n# %d \"%s\"\n" lnum fname
 

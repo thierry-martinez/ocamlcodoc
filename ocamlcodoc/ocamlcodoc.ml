@@ -57,9 +57,9 @@ let extract_doc_channel ~filename snippets in_channel
     warnings = Queue.create ();
     important_warnings = false
   } in
-  Utils.option_iter (output_snippet out_channel) snippets.before;
+  Option.iter (output_snippet out_channel) snippets.before;
   Lexer.main context lexbuf;
-  Utils.option_iter (output_snippet out_channel) snippets.after;
+  Option.iter (output_snippet out_channel) snippets.after;
   if not (Stack.is_empty context.delimiter_stack) then
     Lexer.mismatched_delimiters context
       (Stack.top context.delimiter_stack)

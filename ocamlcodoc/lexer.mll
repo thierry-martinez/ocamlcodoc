@@ -230,24 +230,24 @@ and codoc start_pos context = parse
 }
 and code_comment start_pos context = parse
 | "(*" {
-  Utils.option_iter (fun out_channel -> output_string out_channel "(*")
+  Option.iter (fun out_channel -> output_string out_channel "(*")
       context.out_channel;
   code_comment start_pos context lexbuf;
   code_comment start_pos context lexbuf
 }
 | "*)" {
-  Utils.option_iter (fun out_channel -> output_string out_channel "*)")
+  Option.iter (fun out_channel -> output_string out_channel "*)")
     context.out_channel;
   ()
 }
 | "\"" {
-  Utils.option_iter (fun out_channel -> output_string out_channel "\"")
+  Option.iter (fun out_channel -> output_string out_channel "\"")
     context.out_channel;
   ignore (string lexbuf.lex_curr_p context lexbuf);
   code_comment start_pos context lexbuf
 }
 | "\n" {
-  Utils.option_iter (fun out_channel -> output_string out_channel "\n")
+  Option.iter (fun out_channel -> output_string out_channel "\n")
     context.out_channel;
   Lexing.new_line lexbuf;
   code_comment start_pos context lexbuf
@@ -261,16 +261,16 @@ and code_comment start_pos context = parse
 }
 and string start_pos context = parse
 | "\"" {
-  Utils.option_iter (fun out_channel -> output_string out_channel "\"")
+  Option.iter (fun out_channel -> output_string out_channel "\"")
     context.out_channel;
 }
 | ("\\" _) as s {
-  Utils.option_iter (fun out_channel -> output_string out_channel s)
+  Option.iter (fun out_channel -> output_string out_channel s)
      context.out_channel;
   string start_pos context lexbuf
 }
 | "\n" {
-  Utils.option_iter (fun out_channel -> output_string out_channel "\n")
+  Option.iter (fun out_channel -> output_string out_channel "\n")
     context.out_channel;
   Lexing.new_line lexbuf;
   string start_pos context lexbuf
@@ -280,13 +280,13 @@ and string start_pos context = parse
   raise (Syntax_error (range, "Unterminated string"))
 }
 | _ as char {
-  Utils.option_iter (fun context -> output_char context char)
+  Option.iter (fun context -> output_char context char)
       context.out_channel;
   string start_pos context lexbuf
 }
 and ident_string start_pos context delim = parse
 | ("|" (ident as delim') "}") as end_string {
-  Utils.option_iter (fun out_channel -> output_string out_channel end_string)
+  Option.iter (fun out_channel -> output_string out_channel end_string)
       context.out_channel;
   if delim = delim' then
     ()
@@ -294,13 +294,13 @@ and ident_string start_pos context delim = parse
     ident_string start_pos context delim lexbuf
 }
 | ("\\" _) as s {
-  Utils.option_iter (fun out_channel -> output_string out_channel s)
+  Option.iter (fun out_channel -> output_string out_channel s)
       context.out_channel;
   ident_string start_pos context delim lexbuf
 }
 | "\n" {
   Lexing.new_line lexbuf;
-  Utils.option_iter (fun out_channel -> output_string out_channel "\n")
+  Option.iter (fun out_channel -> output_string out_channel "\n")
     context.out_channel;
   ident_string start_pos context delim lexbuf
 }
@@ -309,7 +309,7 @@ and ident_string start_pos context delim = parse
   raise (Syntax_error (range, "Unterminated string"))
 }
 | _ as char {
-  Utils.option_iter (fun out_channel -> output_char out_channel char)
+  Option.iter (fun out_channel -> output_char out_channel char)
     context.out_channel;
   ident_string start_pos context delim lexbuf
 }
