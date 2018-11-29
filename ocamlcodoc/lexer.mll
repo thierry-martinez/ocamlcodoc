@@ -30,17 +30,27 @@
 
   let try_close_delimiter context delimiter_kind =
     try
-      context.delimiter_stack |> Stack.iter @@ fun { kind } ->
+      context.delimiter_stack |> Stack.iter begin fun { kind } ->
         if kind = delimiter_kind then
           raise Exit
+      end;
+      false
     with Exit ->
-      while (Stack.pop context.delimiter_stack).kind <> delimiter_kind do () done
+      let rec pop_loop only_open_codoc =
+        match (Stack.pop context.delimiter_stack).kind with
+        | Open_codoc ->
+            pop_loop only_open_codoc
+        | kind when kind = delimiter_kind ->
+            only_open_codoc
+        | _ ->
+            pop_loop false in
+      pop_loop true
 
   let mismatched_delimiters context delimiter end_pos =
+    context.important_warnings <- true;
     if not delimiter.warned then
       begin
         delimiter.warned <- true;
-        context.important_warnings <- true;
         let range = { start_pos = delimiter.position; end_pos } in
         Queue.push (range, "Mismatched delimiters") context.warnings;
       end
@@ -152,9 +162,10 @@ and codoc start_pos context = parse
     | Some { kind = String } ->
         ignore (Stack.pop context.delimiter_stack)
     | _ ->
-        Stack.push
-          { position = lexbuf.lex_start_p; kind = String; warned = false }
-          context.delimiter_stack
+        if not (try_close_delimiter context String) then
+          Stack.push
+            { position = lexbuf.lex_start_p; kind = String; warned = false }
+            context.delimiter_stack
   end;
   output_string context.out_channel "\"";
   codoc start_pos context lexbuf
@@ -183,12 +194,8 @@ and codoc start_pos context = parse
     | { kind = Comment } ->
         ignore (Stack.pop context.delimiter_stack)
     | delimiter ->
-        try_close_delimiter context Comment;
-        if not delimiter.warned then
-          begin
-            delimiter.warned <- true;
-            mismatched_delimiters context delimiter lexbuf.lex_curr_p
-          end
+        if not (try_close_delimiter context Comment) then
+          mismatched_delimiters context delimiter lexbuf.lex_curr_p
   end;
   output_string context.out_channel "*)";
   codoc start_pos context lexbuf
@@ -201,7 +208,8 @@ and codoc start_pos context = parse
     | { kind = (String | String_ident _) } ->
         ()
     | delimiter ->
-        mismatched_delimiters context delimiter lexbuf.lex_curr_p
+        if not (try_close_delimiter context (String_ident delim)) then
+          mismatched_delimiters context delimiter lexbuf.lex_curr_p
   end;
   output_string context.out_channel end_string;
   codoc start_pos context lexbuf
@@ -214,8 +222,8 @@ and codoc start_pos context = parse
     | { kind = Square_bracket } ->
         ignore (Stack.pop context.delimiter_stack)
     | delimiter ->
-        try_close_delimiter context Square_bracket;
-        mismatched_delimiters context delimiter lexbuf.lex_curr_p
+        if not (try_close_delimiter context Square_bracket) then
+          mismatched_delimiters context delimiter lexbuf.lex_curr_p
   end;
   output_string context.out_channel "]";
   codoc start_pos context lexbuf

@@ -64,8 +64,9 @@ let extract_doc_channel ~filename snippets in_channel
     Lexer.mismatched_delimiters context
       (Stack.top context.delimiter_stack)
       lexbuf.lex_curr_p;
-  context.warnings |> Queue.iter @@ fun (range, message) ->
-    Printf.fprintf stderr "%a:\nwarning: %s\n\n" output_range range message
+  if context.important_warnings then
+    context.warnings |> Queue.iter @@ fun (range, message) ->
+      Printf.fprintf stderr "%a:\nwarning: %s\n\n" output_range range message
 
 let extract_doc_file snippet ~source ~target =
   let in_channel = open_in source in
