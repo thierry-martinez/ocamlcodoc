@@ -66,6 +66,13 @@ rule main context = parse
   code_comment lexbuf.lex_curr_p { context with out_channel = None } lexbuf;
   main context lexbuf
 }
+| "(*{[" {
+  let position = lexbuf.lex_start_p in
+  Utils.output_position context.out_channel position;
+  Stack.push { position; kind = Open_codoc; warned = false }
+    context.delimiter_stack;
+  codoc position context lexbuf
+}
 | "\"" {
   string lexbuf.lex_curr_p { context with out_channel = None } lexbuf;
   main context lexbuf;
