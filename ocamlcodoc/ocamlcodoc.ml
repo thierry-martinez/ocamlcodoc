@@ -68,20 +68,27 @@ let extract_doc_channel ~filename snippets in_channel
     context.warnings |> Queue.iter @@ fun (range, message) ->
       Printf.fprintf stderr "%a:\nwarning: %s\n\n" output_range range message
 
-let extract_doc_file snippet ~source ~target =
+let extract_doc_file_to_channel snippets ~source out_channel =
   let in_channel = open_in source in
   protect begin fun () ->
-    let out_channel = open_out target in
-    protect begin fun () ->
-      extract_doc_channel ~filename:source snippet in_channel out_channel
-    end
-    ~finally:begin fun () ->
-      close_out out_channel
-    end
+    extract_doc_channel ~filename:source snippets in_channel out_channel
   end
   ~finally:begin fun () ->
     close_in in_channel
   end
+
+let extract_doc_file snippets ~source ~target =
+  let out_channel = open_out target in
+  protect begin fun () ->
+    extract_doc_file_to_channel snippets ~source out_channel 
+  end
+  ~finally:begin fun () ->
+    close_out out_channel
+  end
+
+let extract_multiple_doc_files snippets files out_channel =
+  files |> List.iter @@ fun source ->
+    extract_doc_file_to_channel snippets ~source out_channel
 
 let make_snippet ~contents ~file ~error =
   match contents, file with
@@ -102,19 +109,16 @@ let main target before before_file after after_file files =
     | _ :: _ :: _ :: _, _ ->
         failwith "There should be at most one '%' sign in target filename"
     | _, [] -> extract_doc_channel ~filename:"stdin" snippets stdin stdout
-    | ["-"], _ ->
-        files |> List.iter @@ fun filename ->
-          let in_channel = open_in filename in
-          protect begin fun () ->
-            extract_doc_channel ~filename snippets in_channel stdout
-          end
-          ~finally:begin fun () ->
-            close_in in_channel
-          end
+    | ["-"], _ -> extract_multiple_doc_files snippets files stdout
     | [target], [source] -> extract_doc_file snippets ~source ~target
-    | [_target], _ ->
-        failwith
-        "There should be a '%' sign in target filename to process multiple inputs"
+    | [target], _ ->
+        let out_channel = open_out target in
+        protect begin fun () ->
+          extract_multiple_doc_files snippets files out_channel 
+        end
+        ~finally:begin fun () ->
+          close_out out_channel
+        end
     | [prefix; suffix], _ ->
         files |> List.iter @@ fun source ->
           let body = Filename.remove_extension (Filename.basename source) in
@@ -138,7 +142,7 @@ let files =
 let option_target =
   let doc = "Target file name" in
   Cmdliner.Arg.(
-    value & opt string "%.doc.ml" & info ["o"] ~docv:"TARGET" ~doc)
+    value & opt string "-" & info ["o"] ~docv:"TARGET" ~doc)
 
 let option_before =
   let doc = "Code snippet that should be inserted before the extracted code" in
