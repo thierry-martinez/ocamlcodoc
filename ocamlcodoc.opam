@@ -1,7 +1,8 @@
-opam-version: "2"
+opam-version: "2.0"
 synopsis: "Extract test code from doc-comments"
-maintainer: "Thierry Martinez <martinez@nsup.org>"
-authors: "Thierry Martinez <martinez@nsup.org>"
+description: "ocamlcodoc extracts the preformatted source code in OCaml documentation comments, i.e. the code delimited by {[ ... ]} in comments delimited by (** ... *). A typical usage is to write examples in documentation comments that can be extracted and tested."
+maintainer: "Thierry Martinez <Thierry.Martinez@inria.fr>"
+authors: "Thierry Martinez <Thierry.Martinez@inria.fr>"
 homepage: "https://gitlab.inria.fr/tmartine/ocamlcodoc"
 bug-reports: "https://gitlab.inria.fr/tmartine/ocamlcodoc/issues"
 license: "GPL-3"
@@ -13,5 +14,6 @@ install: [
 remove: [
   ["dune" "build" "@install"]
   ["dune" "uninstall"]]
-depends: ["stdcompat" "cmdliner" "dune"]
-available: [ocaml-version >= "4.02.0" & ocaml-version < "4.08.0"]
+depends: [
+  "ocaml" {>= "4.02.0" & < "4.08.0"}
+  "stdcompat" "cmdliner" "dune"]
