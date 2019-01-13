@@ -14,4 +14,4 @@ remove: [
   ["dune" "build" "@install"]
   ["dune" "uninstall"]]
 depends: ["stdcompat" "cmdliner" "dune"]
-available: [ocaml-version >= "3.07" & ocaml-version < "4.08.0"]
+available: [ocaml-version >= "4.02.0" & ocaml-version < "4.08.0"]
