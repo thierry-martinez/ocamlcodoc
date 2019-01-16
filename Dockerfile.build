@@ -1,0 +1,6 @@
+FROM ocamlcodoc
+COPY utils /home/ci/ocamlcodoc/utils
+COPY ocamlcodoc /home/ci/ocamlcodoc/ocamlcodoc
+COPY dune-project /home/ci/ocamlcodoc/dune-project
+COPY Makefile /home/ci/ocamlcodoc/Makefile
+RUN opam pin add -y ocamlcodoc /home/ci/ocamlcodoc
