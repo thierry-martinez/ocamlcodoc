@@ -16,4 +16,5 @@ remove: [
   ["dune" "uninstall"]]
 depends: [
   "ocaml" {>= "4.02.0" & < "4.08.0"}
-  "stdcompat" "cmdliner" "dune"]
+  "stdcompat" "cmdliner"
+  "dune" {>= "1.3"}]
