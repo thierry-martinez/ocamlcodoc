@@ -2,6 +2,6 @@
   (name ocamlcodoc)
   (public_name ocamlcodoc)
   (flags -open Stdcompat)
-  (libraries unix stdcompat cmdliner))
+  (libraries unix stdcompat cmdliner utils))
 
 (ocamllex lexer)
