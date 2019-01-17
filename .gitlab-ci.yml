@@ -18,5 +18,5 @@ build:
 test:
   stage: test
   script:
-    - docker run --rm ocamlcodoc-build \
+    - docker run --rm ocamlcodoc-build
         bash -c 'make -C /home/ci/ocamlcodoc/ tests'
