@@ -8,3 +8,4 @@ RUN wget -O ~/opam https://github.com/ocaml/opam/releases/download/2.0.2/opam-2.
 RUN chmod +x ~/opam
 RUN sudo mv ~/opam /usr/local/bin/opam
 RUN opam init --disable-sandboxing --auto-setup
+RUN echo source ~/.profile >> ~/.bashrc
