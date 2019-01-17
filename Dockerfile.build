@@ -3,4 +3,5 @@ COPY utils /home/ci/ocamlcodoc/utils
 COPY ocamlcodoc /home/ci/ocamlcodoc/ocamlcodoc
 COPY dune-project /home/ci/ocamlcodoc/dune-project
 COPY Makefile /home/ci/ocamlcodoc/Makefile
+COPY ocamlcodoc.opam /home/ci/ocamlcodoc/ocamlcodoc.opam
 RUN opam pin add -y ocamlcodoc /home/ci/ocamlcodoc
