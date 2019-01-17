@@ -17,4 +17,4 @@ build:
 
 test:
   stage: test
-  script: docker run --rm Dockerfile.build make -C /home/ci/ocamlcodoc/ tests
+  script: docker run --rm ocamlcodoc-build make -C /home/ci/ocamlcodoc/ tests
