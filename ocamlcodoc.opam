@@ -7,7 +7,7 @@ homepage: "https://gitlab.inria.fr/tmartine/ocamlcodoc"
 bug-reports: "https://gitlab.inria.fr/tmartine/ocamlcodoc/issues"
 license: "GPL-3"
 dev-repo: "git+https://gitlab.inria.fr/tmartine/ocamlcodoc.git"
-build: [["dune" "build"]]
+build: [["dune" "build" "-p" name "-j" jobs]]
 depends: [
   "ocaml" {>= "4.02.0" & < "4.08.0"}
   "stdcompat" "cmdliner"
