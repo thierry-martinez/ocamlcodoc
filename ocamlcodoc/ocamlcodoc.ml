@@ -7,10 +7,8 @@ type snippet = Contents of string | File of string
 let output_snippet out_channel snippet =
   match snippet with
   | Contents s ->
-      Utils.output_line_number out_channel "command line" 1;
       output_string out_channel s
   | File filename ->
-      Utils.output_line_number out_channel filename 1;
       let in_channel = open_in filename in
       protect begin fun () ->
         Utils.output_channel_to_the_end out_channel in_channel
