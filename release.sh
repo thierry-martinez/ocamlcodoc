@@ -5,9 +5,9 @@ tagname="v$version"
 git config --global user.email "Thierry.Martinez@inria.fr"
 git config --global user.name "Thierry Martinez"
 current_dir="`pwd`"
-git log -1 --format=%B >commit_message
+[ -f commit_message ] || git log -1 --format=%B >commit_message
 git tag -f -a "$tagname" -m "Version $version"
-git push -f origin "$tagname"
+git push -f git@gitlab.inria.fr:tmartine/ocamlcodoc.git "$tagname"
 archive="ocamlcodoc-$tagname.tar.gz"
 url="https://gitlab.inria.fr/tmartine/ocamlcodoc/-/archive/$tagname/$archive"
 wget "$url"

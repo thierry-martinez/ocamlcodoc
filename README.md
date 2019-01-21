@@ -2,17 +2,20 @@
 
 ocamlcodoc extracts the preformatted source code in OCaml
 documentation comments, i.e. the code delimited by `{[ ... ]}` in
-comments delimited by `(** ... *)`. A typical usage is to write examples
-in documentation comments that can be extracted and tested.
+comments delimited by `(** ... *)`. A typical usage is to write
+examples in documentation comments that can be extracted and tested.
 
-ocamlcodoc can be used as an [inline test](https://dune.readthedocs.io/en/latest/tests.html#inline-tests) back-end with dune (version 1.3 and above):
+ocamlcodoc can be used as an
+[inline test](https://dune.readthedocs.io/en/latest/tests.html#inline-tests)
+back-end with dune (version 1.3 and above):
 ```
 (inline_tests (backend ocamlcodoc))
 ```
 
 ## Basic usage
 
-By default, ocamlcodoc acts as a filter from standard input to standard output:
+By default, ocamlcodoc acts as a filter from standard input to
+standard output:
 
 ```
 $ cat source.ml
@@ -130,7 +133,8 @@ $ ocamlcodoc source.ml
 
 ## Set output file
 
-Output file name can be given as command-line argument with the option `-o`.
+Output file name can be given as command-line argument with the
+option `-o`.
 `-o -` targets standard output (the default).
 
 ```
