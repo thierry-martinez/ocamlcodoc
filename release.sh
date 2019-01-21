@@ -15,7 +15,7 @@ git tag -a "$tagname" -m "Version $version"
 git push origin "$tagname"
 archive="ocamlcodoc-$tagname.tar.gz"
 url= "https://gitlab.inria.fr/tmartine/ocamlcodoc/-/archive/$tagname/$archive"
-sleep 20
+sleep 60
 wget "$url"
 md5=`md5sum "$archive" | cut -d " " -f 1`
 cd ~/opam-repository
