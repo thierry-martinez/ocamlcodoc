@@ -26,5 +26,6 @@ deploy:
   only:
     changes:
       - VERSION
+  except: tags
   script:
     - ./release.sh
