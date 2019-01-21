@@ -4,6 +4,8 @@ version="`cat VERSION`"
 tagname="v$version"
 git config --global user.email "Thierry.Martinez@inria.fr"
 git config --global user.name "Thierry Martinez"
+cd ~/ocamlcodoc
+git pull origin master
 git tag -a "$tagname" -m "Version $version"
 git push origin "$tagname"
 archive="ocamlcodoc-$tagname.tar.gz"
