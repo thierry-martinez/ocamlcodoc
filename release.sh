@@ -1,11 +1,16 @@
 #!/bin/bash
 set -e
-version="`cat VERSION`"
+version="`cat VERSION | tr -d '\n'`"
 tagname="v$version"
+commit="`git rev-parse HEAD`"
 git config --global user.email "Thierry.Martinez@inria.fr"
 git config --global user.name "Thierry Martinez"
 cd ~/ocamlcodoc
 git pull origin master
+if [[ "`git rev-parse HEAD`" != "$commit"]]; then
+    echo "Too recent commit!"
+    exit 1
+fi
 git tag -a "$tagname" -m "Version $version"
 git push origin "$tagname"
 archive="ocamlcodoc-$tagname.tar.gz"
