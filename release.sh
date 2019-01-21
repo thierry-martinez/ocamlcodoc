@@ -7,7 +7,7 @@ git config --global user.email "Thierry.Martinez@inria.fr"
 git config --global user.name "Thierry Martinez"
 cd ~/ocamlcodoc
 git pull origin master
-if [[ "`git rev-parse HEAD`" != "$commit"]]; then
+if [[ "`git rev-parse HEAD`" != "$commit" ]]; then
     echo "Too recent commit!"
     exit 1
 fi
