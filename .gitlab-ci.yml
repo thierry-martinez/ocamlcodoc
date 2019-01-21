@@ -27,4 +27,4 @@ deploy:
     changes:
       - VERSION
   script:
-    - release.sh
+    - ./release.sh
