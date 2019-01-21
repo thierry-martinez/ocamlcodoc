@@ -24,7 +24,7 @@ git checkout -b "$branch"
 repo="packages/ocamlcodoc/ocamlcodoc.$version"
 mkdir -p "$repo"
 opamfile="$repo/opam"
-cp ~/ocamlcodoc/opam "$opamfile"
+cp ~/ocamlcodoc/ocamlcodoc.opam "$opamfile"
 cat >>$opamfile <<EOF
 url {
   src: "$url"
