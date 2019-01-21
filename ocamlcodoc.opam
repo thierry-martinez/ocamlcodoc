@@ -8,12 +8,6 @@ bug-reports: "https://gitlab.inria.fr/tmartine/ocamlcodoc/issues"
 license: "GPL-3"
 dev-repo: "git+https://gitlab.inria.fr/tmartine/ocamlcodoc.git"
 build: [["dune" "build"]]
-install: [
-  ["dune" "build" "@install"]
-  ["dune" "install"]]
-remove: [
-  ["dune" "build" "@install"]
-  ["dune" "uninstall"]]
 depends: [
   "ocaml" {>= "4.02.0" & < "4.08.0"}
   "stdcompat" "cmdliner"
