@@ -20,3 +20,11 @@ test:
   script:
     - docker run --rm ocamlcodoc-build
         bash -c 'make -C /home/ci/ocamlcodoc/ tests'
+
+deploy:
+  stage: deploy
+  only:
+    changes:
+      - VERSION
+  script:
+    - release.sh
