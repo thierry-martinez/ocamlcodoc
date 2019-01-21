@@ -24,8 +24,8 @@ test:
 deploy:
   stage: deploy
   only:
-    changes:
-      - VERSION
+    variables:
+      - $CI_COMMIT_MESSAGE =~ /^Release:/
   except:
     - tags
   script:
