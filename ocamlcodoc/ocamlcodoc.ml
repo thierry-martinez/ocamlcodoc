@@ -10,11 +10,8 @@ let output_snippet out_channel snippet =
       output_string out_channel s
   | File filename ->
       let in_channel = open_in filename in
-      protect begin fun () ->
-        Utils.output_channel_to_the_end out_channel in_channel
-      end
-      ~finally:begin fun () ->
-        close_in in_channel
+      Redirect.read_and_close in_channel begin fun () ->
+        Redirect.output_channel_to_the_end out_channel in_channel
       end
 
 type snippets = {
