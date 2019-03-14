@@ -58,7 +58,7 @@ let extract_doc_channel ~filename snippets in_channel
 
 let extract_doc_file_to_channel snippets ~source out_channel =
   let in_channel = open_in source in
-  protect begin fun () ->
+  Fun.protect begin fun () ->
     extract_doc_channel ~filename:source snippets in_channel out_channel
   end
   ~finally:begin fun () ->
@@ -67,7 +67,7 @@ let extract_doc_file_to_channel snippets ~source out_channel =
 
 let extract_doc_file snippets ~source ~target =
   let out_channel = open_out target in
-  protect begin fun () ->
+  Fun.protect begin fun () ->
     extract_doc_file_to_channel snippets ~source out_channel 
   end
   ~finally:begin fun () ->
@@ -101,7 +101,7 @@ let main target before before_file after after_file files =
     | [target], [source] -> extract_doc_file snippets ~source ~target
     | [target], _ ->
         let out_channel = open_out target in
-        protect begin fun () ->
+        Fun.protect begin fun () ->
           extract_multiple_doc_files snippets files out_channel 
         end
         ~finally:begin fun () ->
