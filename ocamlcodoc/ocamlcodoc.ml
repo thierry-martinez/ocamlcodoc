@@ -65,7 +65,7 @@ let extract_doc_file_to_channel snippets ~source out_channel =
 let extract_doc_file snippets ~source ~target =
   let out_channel = open_out target in
   Fun.protect begin fun () ->
-    extract_doc_file_to_channel snippets ~source out_channel 
+    extract_doc_file_to_channel snippets ~source out_channel
   end
   ~finally:begin fun () ->
     close_out out_channel

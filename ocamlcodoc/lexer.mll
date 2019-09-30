@@ -6,7 +6,8 @@
 
   exception Syntax_error of range * string
 
-  type delimiter_kind = Open_codoc | Comment | String | String_ident of string | Square_bracket
+  type delimiter_kind =
+    | Open_codoc | Comment | String | String_ident of string | Square_bracket
 
   type open_delimiter = {
       position : Lexing.position;
@@ -77,8 +78,9 @@ rule main context = parse
   string lexbuf.lex_curr_p { context with out_channel = None } lexbuf;
   main context lexbuf;
 }
-| "{" (ident as delim) "|" {
-  ident_string lexbuf.lex_curr_p { context with out_channel = None } delim lexbuf;
+| "{" (ident? as delim) "|" {
+  ident_string lexbuf.lex_curr_p { context with out_channel = None } delim
+    lexbuf;
   main context lexbuf
 }
 | "\n" {
@@ -110,8 +112,9 @@ and doc_comment start_pos context = parse
   string lexbuf.lex_curr_p { context with out_channel = None } lexbuf;
   doc_comment start_pos context lexbuf
 }
-| "{" (ident as delim) "|" {
-  ident_string lexbuf.lex_curr_p { context with out_channel = None } delim lexbuf;
+| "{" (ident? as delim) "|" {
+  ident_string lexbuf.lex_curr_p { context with out_channel = None } delim
+    lexbuf;
   main context lexbuf
 }
 | "\n" {
@@ -157,7 +160,7 @@ and codoc start_pos context = parse
   codoc start_pos context lexbuf
 }
 | "\"" {
-  begin 
+  begin
     match
       try
         Some (Stack.top context.delimiter_stack)
@@ -177,7 +180,7 @@ and codoc start_pos context = parse
   output_string context.out_channel "\"";
   codoc start_pos context lexbuf
 }
-| ("{" (ident as delim) "|") as start_string {
+| ("{" (ident? as delim) "|") as start_string {
   if not (is_in_string context) then
     Stack.push
       { position = lexbuf.lex_start_p; kind = String_ident delim;
@@ -207,7 +210,7 @@ and codoc start_pos context = parse
   output_string context.out_channel "*)";
   codoc start_pos context lexbuf
 }
-| ("|" (ident as delim) "}") as end_string {
+| ("|" (ident? as delim) "}") as end_string {
   begin
     match Stack.top context.delimiter_stack with
     | { kind = String_ident delim' } when delim = delim' ->
@@ -300,7 +303,7 @@ and string start_pos context = parse
   string start_pos context lexbuf
 }
 and ident_string start_pos context delim = parse
-| ("|" (ident as delim') "}") as end_string {
+| ("|" (ident? as delim') "}") as end_string {
   Option.iter (fun out_channel -> output_string out_channel end_string)
       context.out_channel;
   if delim = delim' then
