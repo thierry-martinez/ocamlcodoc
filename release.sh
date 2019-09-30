@@ -11,7 +11,7 @@ git push -f git@gitlab.inria.fr:tmartine/ocamlcodoc.git "$tagname"
 archive="ocamlcodoc-$tagname.tar.gz"
 url="https://gitlab.inria.fr/tmartine/ocamlcodoc/-/archive/$tagname/$archive"
 wget "$url"
-md5=`md5sum "$archive" | cut -d " " -f 1`
+sha512=`sha512sum "$archive" | cut -d " " -f 1`
 cd ~/opam-repository
 git pull origin master
 if [[ "$version" = 1.0.0 ]]; then
@@ -27,7 +27,7 @@ cp $current_dir/ocamlcodoc.opam "$opamfile"
 cat >>$opamfile <<EOF
 url {
   src: "$url"
-  checksum: "md5=$md5"
+  checksum: "sha512=$sha512"
 }
 EOF
 git add "$opamfile"
