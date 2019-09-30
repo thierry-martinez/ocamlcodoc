@@ -1,6 +1,6 @@
 FROM debian:testing
 RUN apt-get update && apt-get install --yes autoconf automake unzip aspcud \
-  rsync degit mercurial darcs wget build-essential sudo vim curl
+  rsync git mercurial darcs wget build-essential sudo vim curl
 RUN adduser --disabled-password --gecos ci --shell /bin/bash ci
 RUN echo ci      ALL=\(ALL\) NOPASSWD:ALL >/etc/sudoers
 USER ci
