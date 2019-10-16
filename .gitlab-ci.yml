@@ -30,3 +30,12 @@ deploy:
     - tags
   script:
     - ./release.sh
+
+snapshot:
+  only:
+    refs:
+      - master
+  script:
+    - wget https://gitlab.inria.fr/tmartine/redirect/raw/master/snapshot.sh
+    - chmod +x snapshot.sh
+    - ./snapshot.sh
