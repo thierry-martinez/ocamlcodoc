@@ -21,6 +21,7 @@ comments delimited by (** ... *). A typical usage is to write examples
 in documentation comments that can be extracted and tested.
 ")
  (depends
+  (ocaml (and (>= 4.03.0) (< 4.11.0)))
   (dune (>= 1.11.3))
   cmdliner
   redirect
