@@ -1,4 +1,4 @@
-# Extract test code from OCaml doc-comments.
+# `ocamlcodoc`: Extract test code from OCaml doc-comments.
 
 ocamlcodoc extracts the preformatted source code in OCaml
 documentation comments, i.e. the code delimited by `{[ ... ]}` in
