@@ -2,8 +2,8 @@
 all: ocamlcodoc.opam $(DUNE_PREFIX)/ocamlcodoc/ocamlcodoc.exe
 
 .PHONY : install
-install :
-	dune build ocamlcodoc @install
+install : $(DUNE_PREFIX)/ocamlcodoc/ocamlcodoc.exe
+	dune build @install
 	dune install
 
 

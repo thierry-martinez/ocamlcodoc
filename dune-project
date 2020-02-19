@@ -21,8 +21,7 @@ comments delimited by (** ... *). A typical usage is to write examples
 in documentation comments that can be extracted and tested.
 ")
  (depends
-  (dune (>= 1.10.0))
+  (dune (>= 1.11.3))
   cmdliner
   redirect
   (stdcompat (>= 10))))
-
