@@ -1,21 +1,23 @@
+DUNE=dune
+FLAGS=
+
 .PHONY : all
-all: ocamlcodoc.opam $(DUNE_PREFIX)/ocamlcodoc/ocamlcodoc.exe
+all :
+	$(DUNE) build $(FLAGS)
+
+.PHONY : clean
+clean :
+	$(DUNE) clean $(FLAGS)
 
 .PHONY : install
-install : $(DUNE_PREFIX)/ocamlcodoc/ocamlcodoc.exe
-	dune build @install
-	dune install
+install :
+	$(DUNE) build @install $(FLAGS)
+	$(DUNE) install $(FLAGS)
 
+.PHONY : doc
+doc :
+	$(DUNE) build @doc $(FLAGS)
 
-.PHONY : tests
-tests :
-	dune runtest
-
-ocamlcodoc.opam : dune-project
-	dune build ocamlcodoc.opam
-
-# .PHONY because we want dune to solve dependencies
-
-.PHONY : $(DUNE_PREFIX)/ocamlcodoc/ocamlcodoc.exe
-$(DUNE_PREFIX)/ocamlcodoc/ocamlcodoc.exe:
-	dune build ocamlcodoc/ocamlcodoc.exe
+.PHONY : test
+test :
+	$(DUNE) runtest $(FLAGS)
