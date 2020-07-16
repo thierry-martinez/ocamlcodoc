@@ -25,4 +25,5 @@ in documentation comments that can be extracted and tested.
   (dune (>= 1.11.3))
   (cmdliner (>= 1.0.4))
   (redirect (>= 0.1.1))
-  (stdcompat (>= 10))))
+  (stdcompat (>= 10))
+  (odoc (and :with-doc (>= 1.5.1)))))
