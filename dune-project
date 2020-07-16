@@ -10,6 +10,7 @@
 (homepage "https://github.com/thierry.martinez/ocamlcodoc")
 (bug_reports "https://github.com/thierry.martinez/ocamlcodoc")
 (documentation "https://github.com/thierry.martinez/ocamlcodoc")
+(version "1.0.1")
 
 (package
  (name ocamlcodoc)
