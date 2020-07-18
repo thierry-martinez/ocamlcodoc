@@ -19,16 +19,16 @@ type snippets = {
     after : snippet option;
   }
 
-let pos_column { Lexing.pos_cnum; pos_bol } =
+let pos_column { Lexing.pos_cnum; pos_bol; _ } =
   pos_cnum - pos_bol
 
-let output_range out_channel { Lexer.start_pos; end_pos } =
+let output_range out_channel { Lexer.start_pos; end_pos; _ } =
   assert (start_pos.pos_fname = end_pos.pos_fname);
   if start_pos.pos_lnum = end_pos.pos_lnum then
-    Printf.fprintf stderr "%s:%d:%d-%d" start_pos.pos_fname
+    Printf.fprintf out_channel "%s:%d:%d-%d" start_pos.pos_fname
       start_pos.pos_lnum (pos_column start_pos) (pos_column end_pos)
   else
-    Printf.fprintf stderr "%s:%d:%d-%d:%d" start_pos.pos_fname
+    Printf.fprintf out_channel "%s:%d:%d-%d:%d" start_pos.pos_fname
       start_pos.pos_lnum (pos_column start_pos)
       end_pos.pos_lnum (pos_column end_pos)
 

@@ -24,14 +24,14 @@
 
   let is_in_string context =
     match Stack.top context.delimiter_stack with
-    | { kind = (String | String_ident _) } ->
+    | { kind = (String | String_ident _); _ } ->
         true
     | _ ->
         false
 
   let try_close_delimiter context delimiter_kind =
     try
-      context.delimiter_stack |> Stack.iter begin fun { kind } ->
+      context.delimiter_stack |> Stack.iter begin fun { kind; _ } ->
         if kind = delimiter_kind then
           raise Exit
       end;
@@ -132,9 +132,9 @@ and codoc start_pos context = parse
 | "]}" {
   begin
     match Stack.top context.delimiter_stack with
-    | { kind = Open_codoc } ->
+    | { kind = Open_codoc; _ } ->
         ignore (Stack.pop context.delimiter_stack);
-    | { warned = false } as delimiter ->
+    | { warned = false; _ } as delimiter ->
         delimiter.warned <- true;
         let range = {
           start_pos = delimiter.position;
@@ -142,7 +142,7 @@ and codoc start_pos context = parse
         let warning =
           (range, "End of pre-formatted code before closing delimiter") in
         Queue.push warning context.warnings
-    | { warned = true } -> ()
+    | { warned = true; _ } -> ()
   end;
   doc_comment start_pos context lexbuf
 }
@@ -167,9 +167,9 @@ and codoc start_pos context = parse
       with Stack.Empty ->
         None
     with
-    | Some { kind = String_ident _ } ->
+    | Some { kind = String_ident _; _ } ->
         ()
-    | Some { kind = String } ->
+    | Some { kind = String; _ } ->
         ignore (Stack.pop context.delimiter_stack)
     | _ ->
         if not (try_close_delimiter context String) then
@@ -199,9 +199,9 @@ and codoc start_pos context = parse
 | "*)" {
   begin
     match Stack.top context.delimiter_stack with
-    | { kind = (String | String_ident _) } ->
+    | { kind = (String | String_ident _); _ } ->
         ()
-    | { kind = Comment } ->
+    | { kind = Comment; _ } ->
         ignore (Stack.pop context.delimiter_stack)
     | delimiter ->
         if not (try_close_delimiter context Comment) then
@@ -213,9 +213,9 @@ and codoc start_pos context = parse
 | ("|" (ident? as delim) "}") as end_string {
   begin
     match Stack.top context.delimiter_stack with
-    | { kind = String_ident delim' } when delim = delim' ->
+    | { kind = String_ident delim'; _ } when delim = delim' ->
         ignore (Stack.pop context.delimiter_stack)
-    | { kind = (String | String_ident _) } ->
+    | { kind = (String | String_ident _); _ } ->
         ()
     | delimiter ->
         if not (try_close_delimiter context (String_ident delim)) then
@@ -227,9 +227,9 @@ and codoc start_pos context = parse
 | "]" {
   begin
     match Stack.top context.delimiter_stack with
-    | { kind = (String | String_ident _) } ->
+    | { kind = (String | String_ident _); _ } ->
         ()
-    | { kind = Square_bracket } ->
+    | { kind = Square_bracket; _ } ->
         ignore (Stack.pop context.delimiter_stack)
     | delimiter ->
         if not (try_close_delimiter context Square_bracket) then
