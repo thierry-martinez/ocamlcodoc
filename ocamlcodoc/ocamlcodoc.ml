@@ -99,7 +99,7 @@ let main target before before_file after after_file files =
     | [target], _ ->
         let out_channel = open_out target in
         Fun.protect begin fun () ->
-          extract_multiple_doc_files snippets files out_channel 
+          extract_multiple_doc_files snippets files out_channel
         end
         ~finally:begin fun () ->
           close_out out_channel

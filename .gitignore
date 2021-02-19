@@ -6,4 +6,3 @@
 .merlin
 *.install
 /_build
-/ocamlcodoc.opam
